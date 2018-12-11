@@ -1,5 +1,3 @@
-import os
-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -19,6 +17,7 @@ app.layout = html.Div([
     ),
     html.Div(id='display-value')
 ])
+
 
 @app.callback(dash.dependencies.Output('display-value', 'children'),
               [dash.dependencies.Input('dropdown', 'value')])
