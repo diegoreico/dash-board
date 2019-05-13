@@ -15,3 +15,5 @@ grouped_ratings = ratings.groupby(['rating']).count()
 grouped_ratings['count'] = grouped_ratings.userId
 grouped_ratings = grouped_ratings.drop(['userId', 'movieId', 'timestamp'], axis=1)
 
+# movies
+movies = pd.read_csv('../data/movies.csv')
