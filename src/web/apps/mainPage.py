@@ -26,31 +26,6 @@ layout = html.Div([
         },
         navigation="page",
     ),
-    html.H5('Histograma de las valoraciones de los usuarios'),
-    # dcc.Graph(
-    #     id='hist',
-    #     figure={
-    #         "data": [
-    #             {
-    #                 "x": ratings["rating"],
-    #                 # check if column exists - user may have deleted it
-    #                 # If `column.deletable=False`, then you don't
-    #                 # need to do this check.
-    #                 "y": ratings["rating"],
-    #                 "type": "bar",
-    #             }
-    #         ],
-    #         "layout": {
-    #             "xaxis": {"automargin": True},
-    #             "yaxis": {"automargin": True},
-    #             "height": 250,
-    #             "margin": {"t": 10, "l": 10, "r": 10},
-    #         },
-    #     },
-    # ),
     html.Div(id='app-1-display-value'),
     dcc.Link('Go to Index', href='/')
 ])
-
-
-
