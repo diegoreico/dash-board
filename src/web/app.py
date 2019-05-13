@@ -4,8 +4,7 @@ import pandas as pd
 
 from src import settings
 
-print(os.getcwd())
-print(os.listdir(os.getcwd()))
+print(os.listdir(settings.DATA_FOLDER))
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
