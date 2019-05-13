@@ -1,4 +1,4 @@
-from src.web.Dash import app
+from src.web.Index import app
 
 if __name__ == '__main__':
     app.run_server(debug=True)
