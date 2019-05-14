@@ -27,3 +27,7 @@ def top_films_by_avg(ratings: pd.DataFrame, movies: pd.DataFrame) -> pd.DataFram
     final_df['rating'] = final_df.rating.apply(lambda x: round(x, 2))
 
     return final_df
+
+
+def obtain_users(ratings: pd.DataFrame):
+    return pd.DataFrame({'user': ratings['userId'].unique()})

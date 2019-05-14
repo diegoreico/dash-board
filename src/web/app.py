@@ -13,8 +13,10 @@ app.config.suppress_callback_exceptions = True
 ratings = repositoryService.loadRatings()
 # data for histogram
 grouped_ratings = dataManipulationService.hist_ratings(ratings)
+
 # movies
 movies = repositoryService.loadMovies()
-
 topFilms = dataManipulationService.top_films_by_avg(ratings, movies)
+
+users = dataManipulationService.obtain_users(ratings)
 

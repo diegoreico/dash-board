@@ -3,15 +3,10 @@ import dash_html_components as html
 import dash_table
 import plotly.graph_objs as go
 
-import pandas as pd
-
-from dash.dependencies import Input, Output
-
-from src.web.app import app
-from src.web.app import ratings
 from src.web.app import grouped_ratings
 from src.web.app import movies
 from src.web.app import topFilms
+
 
 
 def create_hist_ratings():
@@ -39,7 +34,7 @@ def create_hist_ratings():
     )
 
 
-def craete_hist_genres():
+def create_hist_genres():
     data = movies['genres'].value_counts().sort_values()[-20:]
 
     return dcc.Graph(
@@ -86,6 +81,7 @@ def create_data_table():
 
 layout = html.Div([
     html.H3('Database content'),
+    html.A("Go to Recommendations Page", href="/recommendations"),
     html.Div([
         dcc.Markdown('''To filter table values, you can use expressions like `> num(30)` <br/>
         Ex: to get films with more than 250 ratings, use the following expression on the rating column `> num(250)`''',
@@ -95,10 +91,7 @@ layout = html.Div([
         ], className="four columns"),
         html.Div([
             create_hist_ratings(),
-            craete_hist_genres()
+            create_hist_genres()
         ], className="six columns"),
     ], className="row"),
-
-    html.Div(id='app-1-display-value'),
-    dcc.Link('Go to Index', href='/')
 ])

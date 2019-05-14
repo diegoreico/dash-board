@@ -3,8 +3,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 
 from src.web.app import app
-from src.web.apps import mainPage
-
+from src.web.apps import mainPage, recommendationsPage
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
@@ -17,6 +16,8 @@ app.layout = html.Div([
 def display_page(pathname):
     if pathname == '/':
         return mainPage.layout
+    elif pathname == '/recommendations':
+        return recommendationsPage.layout
     else:
         return '404'
 
