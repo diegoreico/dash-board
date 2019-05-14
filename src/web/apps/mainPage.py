@@ -11,6 +11,8 @@ from src.web.app import app
 from src.web.app import ratings
 from src.web.app import grouped_ratings
 from src.web.app import movies
+from src.web.app import topFilms
+
 
 def create_hist_ratings():
     return dcc.Graph(
@@ -35,6 +37,7 @@ def create_hist_ratings():
         style={'height': 300},
         id='hist-ratings'
     )
+
 
 def craete_hist_genres():
     data = movies['genres'].value_counts().sort_values()[-20:]
@@ -62,12 +65,15 @@ def craete_hist_genres():
         id='hist-genres'
     )
 
+
 def create_data_table():
     return dash_table.DataTable(
         id='main-table',
-        columns=[{"name": i, "id": i} for i in ratings.columns],
-        data=ratings.to_dict("rows"),
+        columns=[{"name": i, "id": i} for i in topFilms.columns],
+        data=topFilms.to_dict("rows"),
         row_selectable="multi",
+        sorting=True,
+        filtering=True,
         pagination_mode="fe",
         pagination_settings={
             "displayed_pages": 1,
@@ -77,16 +83,20 @@ def create_data_table():
         navigation="page",
     )
 
+
 layout = html.Div([
     html.H3('Database content'),
     html.Div([
+        dcc.Markdown('''To filter table values, you can use expressions like `> num(30)` <br/>
+        Ex: to get films with more than 250 ratings, use the following expression on the rating column `> num(250)`''',
+                     dangerously_allow_html=True),
         html.Div([
             create_data_table()
-        ], className="three columns"),
+        ], className="four columns"),
         html.Div([
             create_hist_ratings(),
             craete_hist_genres()
-        ], className="nine columns"),
+        ], className="six columns"),
     ], className="row"),
 
     html.Div(id='app-1-display-value'),
