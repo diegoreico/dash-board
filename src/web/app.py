@@ -1,5 +1,7 @@
 import dash
-import pandas as pd
+
+from src.services.DataManipulationService import hist_ratings
+from src.services.RepositoryService import loadRatings, loadMovies
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -8,5 +10,10 @@ server = app.server
 
 app.config.suppress_callback_exceptions = True
 
-ratings = pd.read_csv('../data/ratings.csv')
+ratings = loadRatings()
+# data for histogram
+grouped_ratings = hist_ratings(ratings)
+
+# movies
+movies = loadMovies()
 
