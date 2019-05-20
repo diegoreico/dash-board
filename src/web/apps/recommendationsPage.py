@@ -55,26 +55,47 @@ def create_hist_ratings(dff):
     )
 
 
-model = SGD(ratings, n_factors=30, alpha=np.double(0.01), n_epochs=10)
+global_latent_factors = 10
+global_learning_rate = 0.001
+global_number_epochs = 10
+
+ratings_matrix = ratings.pivot_table(index=['userId'], columns=['movieId'], fill_value=0.0).values
+model = SGD(ratings_matrix, global_latent_factors, np.double(global_learning_rate), global_number_epochs)
 
 layout = html.Div([
     html.H3('Recommendations page'),
     html.A("Go Back", href="/"),
     html.Div([
         html.Div([
-            dcc.Markdown('''Model: ''',
+            dcc.Markdown('''**Model**: ''',
                          dangerously_allow_html=True),
         ], className="two columns"),
         html.Div([
-            html.Button('Train Model', id='button')
-        ], className="one columns"),
-        html.Div([
-            dcc.Markdown('Status: `no model trained`', id='msg-training')
+            html.Button('Train Model', id='button-train')
         ], className="two columns"),
+        html.Div([
+            dcc.Markdown('Status: `no existe un modelo entrenado`', id='msg-model')
+        ], className="three columns"),
+        html.Div([
+            dcc.Markdown('', id='msg-training')
+        ], className="threecolumns"),
     ], className="row"),
     html.Div([
-        dcc.Markdown('''AvailableUsers''',
+        dcc.Markdown('Number of latent factors',
                      dangerously_allow_html=True),
+
+        dcc.Slider(id='slider-latent', min=0, max=50, marks={i: '{}'.format(i) for i in range(100)}, value=10),
+        dcc.Markdown('<br/>Learning rate',
+                     dangerously_allow_html=True),
+        dcc.Slider(id='slider-learning', min=0.0001, max=1, step=0.0333,
+                   marks={i: '{:.3f}'.format(i) for i in np.linspace(0.0001, 1, 30, endpoint=False)}, value=0.0001),
+        dcc.Markdown('<br/>Number of epochs',
+                     dangerously_allow_html=True),
+        dcc.Slider(id='slider-epochs', min=0, max=50, marks={i: '{}'.format(i) for i in range(100)}, value=10),
+    ]),
+    html.Div([
+        html.Br(),
+        html.H4('''AvailableUsers'''),
         html.Div([
             create_table('users-table', users)
         ], className="two columns"),
@@ -83,7 +104,10 @@ layout = html.Div([
             # create_hist_genres()
         ], className="nine columns"),
     ], className="row"),
-    dcc.Interval(id="interval", interval=1 * 1000, n_intervals=0)
+    html.Button('Get Recommendations for users', id='button-predict'),
+    dcc.Markdown('', id='msg-predictions'),
+    dcc.Interval(id="interval", interval=1 * 1000, n_intervals=0),
+    dcc.Markdown('', id='msg-none'),
 ])
 
 
@@ -115,12 +139,54 @@ def obtain_film_rates_for_users(selected_users):
 
 
 @app.callback(
-    Output('msg-training', 'children'),
-    [Input('button', 'n_clicks')])
-def update_model_state_button_click(n_clicks):
+    Output('msg-none', 'children'),
+    [Input('button-train', 'n_clicks')],
+    [State('slider-latent', 'value'),
+    State('slider-learning', 'value'),
+    State('slider-epochs', 'value')]
+)
+def update_model_state_button_click(n_clicks, slider_latent, slider_learning, slider_epochs):
     if n_clicks is None:
         n_clicks = 0
 
     if n_clicks > 0 and not model.is_training:
-        model.train()
-        print("finish")
+        model.train(n_factors=slider_latent,
+                    alpha=np.double(slider_learning,dtype=np.double),
+                    n_epochs=slider_epochs)
+        print('done')
+
+
+@app.callback(Output('msg-model', 'children'),
+              [Input('interval', 'n_intervals')])
+def update_metrics(n):
+    if model.is_train:
+        return 'Exists a trained model'
+    else:
+        return 'No trained model available'
+
+
+@app.callback(Output('msg-training', 'children'),
+              [Input('interval', 'n_intervals')])
+def update_metrics(n):
+    if model.is_training:
+        return 'Training a new model...'
+    else:
+        return ''
+
+@app.callback(
+    Output('msg-predictions', 'children'),
+    [Input('button-predict', 'n_clicks')],
+    [State('users-table', "derived_virtual_data"),
+     State('users-table', "derived_virtual_selected_rows")]
+)
+def update_model_state_button_click(n_clicks, rows, derived_virtual_selected_rows):
+
+    if n_clicks is None:
+        return ''
+    else:
+        if model.is_train:
+            selected_users = users.iloc[derived_virtual_selected_rows, 0].values
+            print(selected_users)
+            input = selected_users
+            model.predict(input)
+            return selected_users

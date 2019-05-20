@@ -1,10 +1,9 @@
 
 import numpy as np
 
-
 class SGD:
 
-    def __init__(self, data: np.ndarray, n_factors: int, alpha: np.double, n_epochs:int) -> None:
+    def __init__(self, data: np.ndarray, n_factors: int, alpha: np.double, n_epochs: int) -> None:
         super().__init__()
 
         self.data = data
@@ -18,13 +17,19 @@ class SGD:
         self.is_training = False
         self.is_train = False
 
-    def train(self):
+    def train(self, n_factors: int, alpha: np.double, n_epochs: int):
         """Learn the vectors p_u and q_i with SGD.
            data is the user-item matrix
            n_factor is the number of latent factors to use
            alppha is the learning rate of the SGD
            n_epochs is the number of iterations to run the algorithm
         """
+        np.seterr(all='raise')
+
+        self.n_factors = n_factors
+        self.alpha = alpha
+        self.n_epochs = n_epochs
+
         self.is_training = True
 
         shape = np.shape(self.data)
@@ -32,8 +37,8 @@ class SGD:
         n_items = shape[1]
 
         # Randomly initialize the user and item factors.
-        p = np.random.normal(0, .1, (n_users, self.n_factors))
-        q = np.random.normal(0, .1, (n_items, self.n_factors))
+        p = np.random.normal(0, 1, (n_users, self.n_factors)).astype(np.double)
+        q = np.random.normal(0, 1, (n_items, self.n_factors)).astype(np.double)
 
         # Optimization procedure
         for x in range(self.n_epochs):
@@ -41,6 +46,7 @@ class SGD:
             for (u, i), r_ui in np.ndenumerate(self.data):
                 if r_ui > 0:
                     err = r_ui - np.dot(p[u], q[i])
+
                     # Update vectors p_u and q_i
                     p[u] += self.alpha * err * q[i]
                     q[i] += self.alpha * err * p[u]
@@ -57,3 +63,11 @@ class SGD:
         errors = u - v
         return np.sqrt(np.sum(errors * errors) / errors.size)
 
+    def predict(self, input) -> np.ndarray:
+        users = self._u[input]
+
+        print(self._u)
+
+        print(users)
+
+        return np.array()
