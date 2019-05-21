@@ -78,34 +78,40 @@ layout = html.Div([
         ], className="three columns"),
         html.Div([
             dcc.Markdown('', id='msg-training')
-        ], className="threecolumns"),
+        ], className="two columns"),
+        html.Div([
+            dcc.Markdown('', id='msg-epochs')
+        ], className="two columns"),
     ], className="row"),
+    dcc.Markdown('''**Model Hyperparameters**: '''),
     html.Div([
         dcc.Markdown('Number of latent factors',
                      dangerously_allow_html=True),
-
-        dcc.Slider(id='slider-latent', min=0, max=50, marks={i: '{}'.format(i) for i in range(100)}, value=10),
+        dcc.Slider(id='slider-latent', min=0, max=1000, step=10,
+                   marks={i: '{}'.format(i) for i in range(0, 100, 10)}, value=10),
         dcc.Markdown('<br/>Learning rate',
                      dangerously_allow_html=True),
         dcc.Slider(id='slider-learning', min=0.0001, max=1, step=0.0333,
-                   marks={i: '{:.3f}'.format(i) for i in np.linspace(0.0001, 1, 30, endpoint=False)}, value=0.0001),
+                   marks={i: '{:.4f}'.format(i) for i in np.linspace(0.0001, 1, 30, endpoint=False)}, value=0.0001),
         dcc.Markdown('<br/>Number of epochs',
                      dangerously_allow_html=True),
-        dcc.Slider(id='slider-epochs', min=0, max=50, marks={i: '{}'.format(i) for i in range(100)}, value=10),
+        dcc.Slider(id='slider-epochs', min=0, max=1000, step=10,
+                   marks={i: '{}'.format(i) for i in range(0,1000,10)}, value=10),
     ]),
     html.Div([
         html.Br(),
         html.H4('''AvailableUsers'''),
         html.Div([
             create_table('users-table', users)
-        ], className="two columns"),
+        ], className="three columns"),
         html.Div([
             html.Div(id='datatable-interactivity-container')
             # create_hist_genres()
-        ], className="nine columns"),
+        ], className="seven columns"),
     ], className="row"),
+    html.H4('Predicted Ratings'),
     html.Button('Get Recommendations for users', id='button-predict'),
-    dcc.Markdown('', id='msg-predictions'),
+    html.Div([], id='msg-predictions'),
     dcc.Interval(id="interval", interval=1 * 1000, n_intervals=0),
     dcc.Markdown('', id='msg-none'),
 ])
@@ -173,6 +179,14 @@ def update_metrics(n):
     else:
         return ''
 
+@app.callback(Output('msg-epochs', 'children'),
+              [Input('interval', 'n_intervals')])
+def update_metrics(n):
+    if model.is_training:
+        return 'Current epoch: {}'.format(model.current_epoch)
+    else:
+        return ''
+
 @app.callback(
     Output('msg-predictions', 'children'),
     [Input('button-predict', 'n_clicks')],
@@ -186,7 +200,12 @@ def update_model_state_button_click(n_clicks, rows, derived_virtual_selected_row
     else:
         if model.is_train:
             selected_users = users.iloc[derived_virtual_selected_rows, 0].values
-            print(selected_users)
             input = selected_users
-            model.predict(input)
-            return selected_users
+            group_recommendations, group_recommendations_indexes = model.obtain_group_recommendations(input)
+
+            recommendation_results = movies.loc[group_recommendations_indexes]
+            recommendation_results['predicted_rating'] = group_recommendations[group_recommendations_indexes]
+
+            return html.Div([
+                create_table('table-group-recommendations', recommendation_results)
+            ])

@@ -6,6 +6,7 @@ class SGD:
     def __init__(self, data: np.ndarray, n_factors: int, alpha: np.double, n_epochs: int) -> None:
         super().__init__()
 
+        self.current_epoch = 0
         self.data = data
         self.n_factors = n_factors
         self.alpha = alpha
@@ -42,7 +43,7 @@ class SGD:
 
         # Optimization procedure
         for x in range(self.n_epochs):
-            print("Current SVD epoch {}".format(x))
+            self.current_epoch = x
             for (u, i), r_ui in np.ndenumerate(self.data):
                 if r_ui > 0:
                     err = r_ui - np.dot(p[u], q[i])
@@ -65,9 +66,16 @@ class SGD:
 
     def predict(self, input) -> np.ndarray:
         users = self._u[input]
+        predictions = users.dot(self._v.T)
 
-        print(self._u)
+        return predictions
 
-        print(users)
+    def obtain_group_recommendations(self, input: np.ndarray) -> (np.ndarray, np.ndarray):
+        group_individual_recommendations = self.predict(input)
 
-        return np.array()
+        least_misery_recommendations = np.amin(group_individual_recommendations, axis=0)
+        least_misery_indexes = np.argsort(-least_misery_recommendations)
+
+        return least_misery_recommendations, least_misery_indexes
+
+
