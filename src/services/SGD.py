@@ -1,5 +1,5 @@
-
 import numpy as np
+
 
 class SGD:
 
@@ -7,13 +7,19 @@ class SGD:
         super().__init__()
 
         self.current_epoch = 0
-        self.data = data
+
+        self.data_min = np.min(data)
+        self.data_max = np.max(data)
+        self.data = (data - self.data_min)/(self.data_max - self.data_min)
+
         self.n_factors = n_factors
         self.alpha = alpha
         self.n_epochs = n_epochs
 
         self._u: np.ndarray = None
         self._v: np.ndarray = None
+
+        self.epoch_errors = []
 
         self.is_training = False
         self.is_train = False
@@ -25,7 +31,6 @@ class SGD:
            alppha is the learning rate of the SGD
            n_epochs is the number of iterations to run the algorithm
         """
-        np.seterr(all='raise')
 
         self.n_factors = n_factors
         self.alpha = alpha
@@ -44,6 +49,7 @@ class SGD:
         # Optimization procedure
         for x in range(self.n_epochs):
             self.current_epoch = x
+            print('Current epoch: {}'.format(x))
             for (u, i), r_ui in np.ndenumerate(self.data):
                 if r_ui > 0:
                     err = r_ui - np.dot(p[u], q[i])
@@ -52,15 +58,21 @@ class SGD:
                     p[u] += self.alpha * err * q[i]
                     q[i] += self.alpha * err * p[u]
 
-        self._u = p
-        self._v = q
+            # updates matrices at the end of an epoch
+            self._u = p
+            self._v = q
+
+            # obtain current error
+            reconstructed_matrix = (p.dot(q.T) * (self.data_max - self.data_min)) + self.data_min
+            error = self.rmse(self.data, reconstructed_matrix)
+            self.epoch_errors.append(error)
 
         self.is_training = False
         self.is_train = True
 
         return p, q
 
-    def rmse(self, u: np.ndarray, v: np.ndarray) -> int:
+    def rmse(self, u: np.ndarray, v: np.ndarray):
         errors = u - v
         return np.sqrt(np.sum(errors * errors) / errors.size)
 
@@ -77,5 +89,3 @@ class SGD:
         least_misery_indexes = np.argsort(-least_misery_recommendations)
 
         return least_misery_recommendations, least_misery_indexes
-
-

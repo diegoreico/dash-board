@@ -55,11 +55,39 @@ def create_hist_ratings(dff):
     )
 
 
+def create_errors_plot():
+    return dcc.Graph(
+        figure=go.Figure(
+            data=[
+                go.Scatter(
+                    x=list(range(len(model.epoch_errors))),
+                    y=model.epoch_errors,
+                    mode='lines+markers',
+                    name='Model Epoch Errors',
+                )
+            ],
+            layout=go.Layout(
+                title='Training error',
+                showlegend=True,
+                legend=go.layout.Legend(
+                    x=0,
+                    y=1.0
+                ),
+                margin=go.layout.Margin(l=40, r=0, t=40, b=30)
+            )
+        ),
+        style={'height': 300},
+        id='error-line-plot'
+    )
+
+
 global_latent_factors = 10
 global_learning_rate = 0.001
 global_number_epochs = 10
 
 ratings_matrix = ratings.pivot_table(index=['userId'], columns=['movieId'], fill_value=0.0).values
+# normalized_ratings_matrix = (ratings_matrix - np.min(ratings_matrix))/(np.max(ratings_matrix) - np.min(ratings_matrix))
+
 model = SGD(ratings_matrix, global_latent_factors, np.double(global_learning_rate), global_number_epochs)
 
 layout = html.Div([
@@ -82,21 +110,22 @@ layout = html.Div([
         html.Div([
             dcc.Markdown('', id='msg-epochs')
         ], className="two columns"),
+        html.Div([], id='plot-errors', className="twelve columns"),
     ], className="row"),
     dcc.Markdown('''**Model Hyperparameters**: '''),
     html.Div([
         dcc.Markdown('Number of latent factors',
                      dangerously_allow_html=True),
-        dcc.Slider(id='slider-latent', min=0, max=1000, step=10,
-                   marks={i: '{}'.format(i) for i in range(0, 100, 10)}, value=10),
+        dcc.Slider(id='slider-latent', min=0, max=50, step=1,
+                   marks={i: '{}'.format(i) for i in range(0, 50, 1)}, value=10),
         dcc.Markdown('<br/>Learning rate',
                      dangerously_allow_html=True),
-        dcc.Slider(id='slider-learning', min=0.0001, max=1, step=0.0333,
-                   marks={i: '{:.4f}'.format(i) for i in np.linspace(0.0001, 1, 30, endpoint=False)}, value=0.0001),
+        dcc.Slider(id='slider-learning', min=0.0001, max=0.1, step=0.00333,
+                   marks={i: '{:.4f}'.format(i) for i in np.linspace(0.0001, 0.1, 30, endpoint=False)}),
         dcc.Markdown('<br/>Number of epochs',
                      dangerously_allow_html=True),
-        dcc.Slider(id='slider-epochs', min=0, max=1000, step=10,
-                   marks={i: '{}'.format(i) for i in range(0,1000,10)}, value=10),
+        dcc.Slider(id='slider-epochs', min=0, max=1000, step=20,
+                   marks={i: '{}'.format(i) for i in range(0, 1000, 20)}, value=20),
     ]),
     html.Div([
         html.Br(),
@@ -106,13 +135,12 @@ layout = html.Div([
         ], className="three columns"),
         html.Div([
             html.Div(id='datatable-interactivity-container')
-            # create_hist_genres()
         ], className="seven columns"),
     ], className="row"),
     html.H4('Predicted Ratings'),
     html.Button('Get Recommendations for users', id='button-predict'),
     html.Div([], id='msg-predictions'),
-    dcc.Interval(id="interval", interval=1 * 1000, n_intervals=0),
+    dcc.Interval(id='interval', interval=5 * 1000, n_intervals=0),
     dcc.Markdown('', id='msg-none'),
 ])
 
@@ -148,8 +176,8 @@ def obtain_film_rates_for_users(selected_users):
     Output('msg-none', 'children'),
     [Input('button-train', 'n_clicks')],
     [State('slider-latent', 'value'),
-    State('slider-learning', 'value'),
-    State('slider-epochs', 'value')]
+     State('slider-learning', 'value'),
+     State('slider-epochs', 'value')]
 )
 def update_model_state_button_click(n_clicks, slider_latent, slider_learning, slider_epochs):
     if n_clicks is None:
@@ -157,14 +185,15 @@ def update_model_state_button_click(n_clicks, slider_latent, slider_learning, sl
 
     if n_clicks > 0 and not model.is_training:
         model.train(n_factors=slider_latent,
-                    alpha=np.double(slider_learning,dtype=np.double),
+                    alpha=np.double(slider_learning, dtype=np.double),
                     n_epochs=slider_epochs)
         print('done')
 
 
 @app.callback(Output('msg-model', 'children'),
-              [Input('interval', 'n_intervals')])
-def update_metrics(n):
+              [Input('button-train', 'n_clicks'),
+               Input('interval', 'n_intervals')])
+def update_model_exists_msg(clicks, intervals):
     if model.is_train:
         return 'Exists a trained model'
     else:
@@ -172,20 +201,24 @@ def update_metrics(n):
 
 
 @app.callback(Output('msg-training', 'children'),
-              [Input('interval', 'n_intervals')])
-def update_metrics(n):
+              [Input('button-train', 'n_clicks'),
+               Input('interval', 'n_intervals')])
+def update_model_training_msg(clicks, intervals):
     if model.is_training:
         return 'Training a new model...'
     else:
         return ''
 
+
 @app.callback(Output('msg-epochs', 'children'),
-              [Input('interval', 'n_intervals')])
-def update_metrics(n):
+              [Input('button-train', 'n_clicks'),
+               Input('interval', 'n_intervals')])
+def update_epochs_msg(clicks, intervals):
     if model.is_training:
         return 'Current epoch: {}'.format(model.current_epoch)
     else:
         return ''
+
 
 @app.callback(
     Output('msg-predictions', 'children'),
@@ -193,8 +226,7 @@ def update_metrics(n):
     [State('users-table', "derived_virtual_data"),
      State('users-table', "derived_virtual_selected_rows")]
 )
-def update_model_state_button_click(n_clicks, rows, derived_virtual_selected_rows):
-
+def update_table_with_recommendations_from_selected_users(n_clicks, rows, derived_virtual_selected_rows):
     if n_clicks is None:
         return ''
     else:
@@ -209,3 +241,18 @@ def update_model_state_button_click(n_clicks, rows, derived_virtual_selected_row
             return html.Div([
                 create_table('table-group-recommendations', recommendation_results)
             ])
+
+
+@app.callback(
+    Output('plot-errors', 'children'),
+    [Input('interval', 'n_intervals')],
+)
+def update_graph_over_time(interval):
+    print('Training: {}'.format(model.is_training))
+    print('Model errors: {}'.format(model.epoch_errors))
+    if len(model.epoch_errors) > 0:
+        return html.Div([
+            create_errors_plot()
+        ])
+    else:
+        return html.Div([])
