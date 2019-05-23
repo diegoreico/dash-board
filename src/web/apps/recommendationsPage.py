@@ -86,8 +86,6 @@ global_learning_rate = 0.001
 global_number_epochs = 10
 
 ratings_matrix = ratings.pivot_table(index=['userId'], columns=['movieId'], fill_value=0.0).values
-# normalized_ratings_matrix = (ratings_matrix - np.min(ratings_matrix))/(np.max(ratings_matrix) - np.min(ratings_matrix))
-
 model = SGD(ratings_matrix, global_latent_factors, np.double(global_learning_rate), global_number_epochs)
 
 layout = html.Div([
@@ -116,12 +114,20 @@ layout = html.Div([
     html.Div([
         dcc.Markdown('Number of latent factors',
                      dangerously_allow_html=True),
-        dcc.Slider(id='slider-latent', min=0, max=50, step=1,
-                   marks={i: '{}'.format(i) for i in range(0, 50, 1)}, value=10),
+        dcc.Slider(id='slider-latent', min=5, max=100, step=5,
+                   marks={i: '{}'.format(i) for i in range(5, 100, 5)}, value=10),
         dcc.Markdown('<br/>Learning rate',
                      dangerously_allow_html=True),
-        dcc.Slider(id='slider-learning', min=0.0001, max=0.1, step=0.00333,
-                   marks={i: '{:.4f}'.format(i) for i in np.linspace(0.0001, 0.1, 30, endpoint=False)}),
+        dcc.Slider(id='slider-learning', min=0, max=1, step=0.03333, value=0.03333,
+                   marks={i: '{:.4f}'.format(i) for i in np.linspace(0, 1, 30, endpoint=False)}),
+        dcc.Markdown('<br/>Bias Regularization',
+                     dangerously_allow_html=True),
+        dcc.Slider(id='slider-bias', min=0, max=1, step=0.05, value=0.05,
+                   marks={i: '{:.2f}'.format(i) for i in np.linspace(0, 1, 20, endpoint=False)}),
+        dcc.Markdown('<br/>L2 Regularization',
+                     dangerously_allow_html=True),
+        dcc.Slider(id='slider-l2', min=0, max=1, step=0.05, value=0.05,
+                   marks={i: '{:.2f}'.format(i) for i in np.linspace(0, 1, 20, endpoint=False)}),
         dcc.Markdown('<br/>Number of epochs',
                      dangerously_allow_html=True),
         dcc.Slider(id='slider-epochs', min=0, max=1000, step=20,
@@ -177,16 +183,20 @@ def obtain_film_rates_for_users(selected_users):
     [Input('button-train', 'n_clicks')],
     [State('slider-latent', 'value'),
      State('slider-learning', 'value'),
-     State('slider-epochs', 'value')]
+     State('slider-epochs', 'value'),
+     State('slider-bias', 'value'),
+     State('slider-l2', 'value')]
 )
-def update_model_state_button_click(n_clicks, slider_latent, slider_learning, slider_epochs):
+def update_model_state_button_click(n_clicks, slider_latent, slider_learning, slider_epochs, slider_bias, slider_l2):
     if n_clicks is None:
         n_clicks = 0
 
     if n_clicks > 0 and not model.is_training:
         model.train(n_factors=slider_latent,
-                    alpha=np.double(slider_learning, dtype=np.double),
-                    n_epochs=slider_epochs)
+                    learning_rate=np.double(slider_learning, dtype=np.double),
+                    n_epochs=slider_epochs,
+                    bias_reg=slider_bias,
+                    l2_reg=slider_l2)
         print('done')
 
 
@@ -248,8 +258,6 @@ def update_table_with_recommendations_from_selected_users(n_clicks, rows, derive
     [Input('interval', 'n_intervals')],
 )
 def update_graph_over_time(interval):
-    print('Training: {}'.format(model.is_training))
-    print('Model errors: {}'.format(model.epoch_errors))
     if len(model.epoch_errors) > 0:
         return html.Div([
             create_errors_plot()
