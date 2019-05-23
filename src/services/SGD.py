@@ -2,26 +2,46 @@ import numpy as np
 
 np.random.seed(1234)
 
+
 class SGD:
 
-    def __init__(self, data: np.ndarray, n_factors: int, learning_rate: np.double, n_epochs: int, l2reg: float = 0.2) -> None:
+    def __init__(self, data: np.ndarray, n_factors: int, learning_rate: np.double, n_epochs: int,
+                 l2reg: float = 0.2) -> None:
         super().__init__()
 
         self.current_epoch = 0
 
+        self.data = data
+        shape = np.shape(self.data)
+        self._n_users = shape[0]
+        self._n_items = shape[1]
         self.data_min = np.min(data)
         self.data_max = np.max(data)
-        self.data = (data - self.data_min) / (self.data_max - self.data_min)
-        # self.data = data
 
         self.n_factors = n_factors
         self.learning_rate = learning_rate
         self.n_epochs = n_epochs
         self._l2_reg = l2reg
 
-        shape = np.shape(self.data)
-        self._n_users = shape[0]
-        self._n_items = shape[1]
+        # hides some values in matrix to validate recommendation method
+        ###
+        positive_values = np.where(self.data > 0)
+        test_split_size = round(0.2 * len(positive_values[0]))
+        test_split_positive_values_idx = np.random.randint(0, len(positive_values[0]), test_split_size)
+        test_split_selected_values = list(zip(
+            positive_values[0][test_split_positive_values_idx],
+            positive_values[1][test_split_positive_values_idx]
+        ))
+
+        self.test_data = []
+
+        for x, y in test_split_selected_values:
+            self.test_data.append((x, y, self.data[x][y]))
+            self.data[x][y] = 0
+        ###
+
+        # normalizes matrix values between 0 and 1
+        self.data = (data - self.data_min) / (self.data_max - self.data_min)
 
         # Randomly initialize the user and item factors
         self._p = np.random.normal(0, 1. / self.n_factors, (self._n_users, self.n_factors))
@@ -32,6 +52,7 @@ class SGD:
         self._global_bias = np.mean(self.data[np.where(self.data != 0)])
 
         self.epoch_errors = []
+        self.epoch_test_errors = []
 
         self.is_training = False
         self.is_train = False
@@ -75,6 +96,14 @@ class SGD:
             error = self.rmse(self.data, scaled_matrix)
             # error = self.rmse(self.data, reconstructed_matrix)
             self.epoch_errors.append(error)
+
+            # obtain current test error
+            test_error = 0.0
+            for x, y, vxy in self.test_data:
+                partial_test_error = scaled_matrix[x, y] - vxy
+                test_error += partial_test_error**2
+
+            self.epoch_test_errors.append(test_error/len(self.test_data))
 
         self.is_training = False
         self.is_train = True

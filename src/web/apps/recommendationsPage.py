@@ -64,10 +64,16 @@ def create_errors_plot():
                     y=model.epoch_errors,
                     mode='lines+markers',
                     name='Model Epoch Errors',
+                ),
+                go.Scatter(
+                    x=list(range(len(model.epoch_test_errors))),
+                    y=model.epoch_test_errors,
+                    mode='lines+markers',
+                    name='Model Epoch Test Errors',
                 )
             ],
             layout=go.Layout(
-                title='Training error',
+                title='Training errors',
                 showlegend=True,
                 legend=go.layout.Legend(
                     x=0,
