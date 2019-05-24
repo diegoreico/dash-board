@@ -61,6 +61,7 @@ class SGD:
 
         np.seterr(all='raise')
         self.epoch_errors = []
+        self.epoch_test_errors = []
 
         self.n_factors = n_factors
         self.learning_rate = learning_rate
@@ -74,10 +75,9 @@ class SGD:
 
         # Optimization procedure
         for epoch in range(self.n_epochs):
-            self.current_epoch = epoch
+            self.current_epoch = epoch + 1
             print('Current epoch: {}'.format(epoch))
             for (u, i), r_ui in np.ndenumerate(self.data):
-                # print('{} - {}'.format(u, i))
                 if r_ui > 0:
                     # obtain current error
                     prediction = self.predict(u, i)
@@ -94,19 +94,22 @@ class SGD:
                     self._p[u] += self.learning_rate * (error * q_i - self._l2_reg * p_u)
                     self._q[i] += self.learning_rate * (error * p_u - self._l2_reg * q_i)
 
-            reconstructed_matrix = self.predict_all(list(range(self._n_users)))
-            scaled_matrix = reconstructed_matrix * (self.data_max - self.data_min) + self.data_min
-
-            # obtain current rmse
-            error = self.nonzero_rmse(self.data, scaled_matrix)
-            self.epoch_errors.append(error)
-
-            # obtain current test error
-            test_error = self.test_rmse(scaled_matrix)
-            self.epoch_test_errors.append(test_error)
+            self.log_errors()
 
         self.is_training = False
         self.is_train = True
+
+    def log_errors(self):
+        reconstructed_matrix = self.predict_all(list(range(self._n_users)))
+        scaled_matrix = reconstructed_matrix * (self.data_max - self.data_min) + self.data_min
+
+        # obtain current rmse
+        error = self.nonzero_rmse(self.data, scaled_matrix)
+        self.epoch_errors.append(error)
+
+        # obtain current test error
+        test_error = self.test_rmse(scaled_matrix)
+        self.epoch_test_errors.append(test_error)
 
     def test_rmse(self, scaled_matrix):
         test_error = 0.0
