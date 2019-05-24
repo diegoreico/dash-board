@@ -26,7 +26,7 @@ class SGD:
         # hides some values in matrix to validate recommendation method
         ###
         positive_values = np.where(self.data > 0)
-        test_split_size = round(0.2 * len(positive_values[0]))
+        test_split_size = round(0.3 * len(positive_values[0]))
         test_split_positive_values_idx = np.random.randint(0, len(positive_values[0]), test_split_size)
         test_split_selected_values = list(zip(
             positive_values[0][test_split_positive_values_idx],
@@ -44,8 +44,8 @@ class SGD:
         self.data = (data - self.data_min) / (self.data_max - self.data_min)
 
         # Randomly initialize the user and item factors
-        self._p = np.random.normal(0, 1. / self.n_factors, (self._n_users, self.n_factors))
-        self._q = np.random.normal(0, 1. / self.n_factors, (self._n_items, self.n_factors))
+        self._p = np.random.normal(0, 1/self.n_factors, (self._n_users, self.n_factors)).astype('longdouble')
+        self._q = np.random.normal(0, 1/self.n_factors, (self._n_items, self.n_factors)).astype('longdouble')
 
         self._p_bias = np.zeros(self._n_users)
         self._q_bias = np.zeros(self._n_items)
@@ -73,10 +73,11 @@ class SGD:
         item_bias_reg = bias_reg
 
         # Optimization procedure
-        for x in range(self.n_epochs):
-            self.current_epoch = x
-            print('Current epoch: {}'.format(x))
+        for epoch in range(self.n_epochs):
+            self.current_epoch = epoch
+            print('Current epoch: {}'.format(epoch))
             for (u, i), r_ui in np.ndenumerate(self.data):
+                # print('{} - {}'.format(u, i))
                 if r_ui > 0:
                     # obtain current error
                     prediction = self.predict(u, i)
@@ -87,8 +88,11 @@ class SGD:
                     self._q_bias[i] += self.learning_rate * (error - item_bias_reg * self._q_bias[i])
 
                     # Update latent factors
-                    self._p[u] += self.learning_rate * (error * self._q[i] - self._l2_reg * self._p[u])
-                    self._q[i] += self.learning_rate * (error * self._p[u] - self._l2_reg * self._q[i])
+                    p_u = self._p[u].copy()
+                    q_i = self._q[i].copy()
+
+                    self._p[u] += self.learning_rate * (error * q_i - self._l2_reg * p_u)
+                    self._q[i] += self.learning_rate * (error * p_u - self._l2_reg * q_i)
 
             # obtain current error
             reconstructed_matrix = self.predict_all(list(range(self._n_users)))
