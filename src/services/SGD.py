@@ -94,23 +94,43 @@ class SGD:
                     self._p[u] += self.learning_rate * (error * q_i - self._l2_reg * p_u)
                     self._q[i] += self.learning_rate * (error * p_u - self._l2_reg * q_i)
 
-            # obtain current error
             reconstructed_matrix = self.predict_all(list(range(self._n_users)))
             scaled_matrix = reconstructed_matrix * (self.data_max - self.data_min) + self.data_min
-            error = self.rmse(self.data, scaled_matrix)
-            # error = self.rmse(self.data, reconstructed_matrix)
+
+            # obtain current rmse
+            error = self.nonzero_rmse(self.data, scaled_matrix)
             self.epoch_errors.append(error)
 
             # obtain current test error
-            test_error = 0.0
-            for x, y, vxy in self.test_data:
-                partial_test_error = scaled_matrix[x, y] - vxy
-                test_error += partial_test_error**2
-
-            self.epoch_test_errors.append(test_error/len(self.test_data))
+            test_error = self.test_rmse(scaled_matrix)
+            self.epoch_test_errors.append(test_error)
 
         self.is_training = False
         self.is_train = True
+
+    def test_rmse(self, scaled_matrix):
+        test_error = 0.0
+        for x, y, vxy in self.test_data:
+            partial_test_error = scaled_matrix[x, y] - vxy
+            test_error += partial_test_error ** 2
+        test_error = np.sqrt(test_error / len(self.test_data))
+        return test_error
+
+    def nonzero_rmse(self, u: np.ndarray, v: np.ndarray):
+        error = 0.0
+
+        positive_values = np.where(u > 0)
+        index_list = list(zip(
+            positive_values[0],
+            positive_values[1]
+        ))
+
+        for x, y in index_list:
+            partial_error = u[x][y] - v[x][y]
+            error += partial_error**2
+
+        error = np.sqrt(error / len(index_list))
+        return error
 
     def rmse(self, u: np.ndarray, v: np.ndarray):
         errors = u - v
