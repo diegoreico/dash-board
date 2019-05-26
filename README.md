@@ -38,4 +38,6 @@ Group recommendation are obtained using the method/criteria `Least Misery Criter
 
 ## More Details
 
-More details about the recommendation process and used data can be found inside the [report.pdf](report.pdf)
+More details about the recommendation process and used data can be found inside [this google colaboratory notebook](https://colab.research.google.com/drive/1BI5xxtrF0NMVhexUbUP5smVHb9h3oiAa). You can read an offline rendered version of that notebook on one of the following files:
+- [SistemaDeRecomendaciónParaGrupos.ipynb](SistemaDeRecomendaciónParaGrupos.ipynb)
+- [SistemaDeRecomendaciónParaGrupos.pdf](SistemaDeRecomendaciónParaGrupos.pdf)
