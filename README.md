@@ -16,8 +16,7 @@ This application uses **python 3**, **pip** and you need to install the dependen
     ```
 2. Get into the src folder and run the app using python
     ```bash
-    cd src
-    python3 app.py
+    python3 -m src.app 
     ```
 
 After starting the app, a web dashboard should be available at [http://127.0.0.1:8050/](http://127.0.0.1:8050/). That web page shows basic data insights on the root page and if you go to the url [http://127.0.0.1:8050/recommendations](http://127.0.0.1:8050/recommendations), you can train a recommendation model selecting his hyper-parameters.
