@@ -1,7 +1,5 @@
 # Recommendation System Dashboard
 
-**Explain that this application uses movielns dataset to perform group recommendations**
-
 This application creates a web dashboard that could be used to generate movie recommendations for groups. It also allows you to tune your own recommendation model selecting it's hyperparameters.
 
 ## Requirements
