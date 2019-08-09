@@ -2,7 +2,8 @@
 
 This application creates a web dashboard that could be used to generate movie recommendations for groups. It also allows you to tune your own recommendation model selecting it's hyperparameters.
 
-Video in Spanish showing the application
+**Video in Spanish showing the application**
+
 [![Video](https://i9.ytimg.com/vi/euasmrlr3xs/mq2.jpg?sqp=CKTateoF&rs=AOn4CLBtvoK6t5pzVhwZiN6KRy_O9eQA3Q)](https://youtu.be/euasmrlr3xs)
 
 
